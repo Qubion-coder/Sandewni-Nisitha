@@ -8,19 +8,19 @@
   --font-montserrat: "Montserrat", sans-serif;
   --font-playball: "Playball", cursive;
 
-  --color-sage: #f3a7cd;
-  --color-paper: #FDFBF7;
+  --color-sage: #8bbbe0;
+  --color-paper: #ffffff;
 
-  --color-theme-50: #fdf7fb;
-  --color-theme-100: #f8eaf3;
-  --color-theme-200: #f1d6e8;
-  --color-theme-300: #e8bdd9;
-  --color-theme-400: #dd9ec8;
-  --color-theme-500: #f3a7cd;
-  --color-theme-600: #bc5f99;
-  --color-theme-700: #9f4c80;
-  --color-theme-800: #833f69;
-  --color-theme-900: #6c3557;
+  --color-theme-50: #f0f7fb;
+  --color-theme-100: #e3f0f9;
+  --color-theme-200: #cce3f4;
+  --color-theme-300: #add1eb;
+  --color-theme-400: #8bbbe0;
+  --color-theme-500: #71a3d3;
+  --color-theme-600: #5785ba;
+  --color-theme-700: #486a9a;
+  --color-theme-800: #3e587e;
+  --color-theme-900: #354a67;
 }
 
 :root {
@@ -77,7 +77,12 @@ html, body {
   width: clamp(300px, 38vw, 620px);
   aspect-ratio: 1 / 1;
   opacity: var(--mandala-accent-opacity);
-  filter: sepia(1) saturate(1.55) hue-rotate(285deg) brightness(1.12) contrast(1.05);
+}
+
+img[src*="mandala_gold.png"],
+img[src*="left.png"],
+img[src*="right.png"] {
+  filter: sepia(1) saturate(2) hue-rotate(180deg) brightness(0.6) contrast(1.15);
 }
 
 .mandala-corner.is-soft {
@@ -117,9 +122,9 @@ html, body {
 
 .website-shell {
   background:
-    radial-gradient(circle at 18% 14%, rgba(243, 167, 205, 0.19), transparent 38%),
-    radial-gradient(circle at 84% 72%, rgba(221, 158, 200, 0.16), transparent 42%),
-    linear-gradient(180deg, #fffdf8 0%, #fdfaf5 42%, #fffdf8 100%);
+    radial-gradient(circle at 18% 14%, rgba(113, 163, 211, 0.19), transparent 38%),
+    radial-gradient(circle at 84% 72%, rgba(139, 187, 224, 0.16), transparent 42%),
+    linear-gradient(180deg, #ffffff 0%, #f7fafd 42%, #ffffff 100%);
 }
 
 .section-floral-overlay {
@@ -131,23 +136,23 @@ html, body {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 20% 25%, rgba(243, 167, 205, 0.16), transparent 35%),
-    radial-gradient(circle at 78% 75%, rgba(232, 189, 217, 0.14), transparent 38%);
+    radial-gradient(circle at 20% 25%, rgba(113, 163, 211, 0.16), transparent 35%),
+    radial-gradient(circle at 78% 75%, rgba(173, 209, 235, 0.14), transparent 38%);
 }
 
 .paper-grain {
   background-image:
     radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.85) 0.5px, transparent 0.8px),
-    radial-gradient(circle at 78% 42%, rgba(210, 180, 198, 0.2) 0.6px, transparent 0.9px),
-    radial-gradient(circle at 42% 76%, rgba(164, 124, 146, 0.1) 0.5px, transparent 0.8px);
+    radial-gradient(circle at 78% 42%, rgba(173, 209, 235, 0.2) 0.6px, transparent 0.9px),
+    radial-gradient(circle at 42% 76%, rgba(113, 163, 211, 0.1) 0.5px, transparent 0.8px);
   background-size: 9px 9px, 15px 15px, 18px 18px;
 }
 
 .paper-grain-strong {
   background-image:
     radial-gradient(circle at 22% 24%, rgba(255, 255, 255, 0.88) 0.55px, transparent 0.85px),
-    radial-gradient(circle at 70% 64%, rgba(190, 145, 170, 0.22) 0.65px, transparent 0.95px),
-    linear-gradient(180deg, rgba(255, 251, 247, 0.75), rgba(253, 245, 238, 0.8));
+    radial-gradient(circle at 70% 64%, rgba(139, 187, 224, 0.22) 0.65px, transparent 0.95px),
+    linear-gradient(180deg, rgba(240, 247, 251, 0.75), rgba(227, 240, 249, 0.8));
   background-size: 8px 8px, 14px 14px, 100% 100%;
 }
 
