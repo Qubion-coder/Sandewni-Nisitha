@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { motion, AnimatePresence, useInView } from "framer-motion";
+import React, { useEffect, useState, useRef } from "react";
+import { motion } from "framer-motion";
 import { Sparkles, MapPin, Calendar, Clock } from "lucide-react";
 
 /**
@@ -12,18 +12,24 @@ import { Sparkles, MapPin, Calendar, Clock } from "lucide-react";
 /**
  * iOS Safari often throttles or skips IntersectionObserver callbacks
  * during fast momentum scrolling, causing whileInView elements to
- * stay at their initial (hidden) state. We detect iOS and use a
- * generous viewport margin + an automatic fallback timer.
+ * stay at their initial (hidden) state. We detect iOS and simply
+ * never hide elements initially — they render visible immediately.
  */
 const isIOS = typeof navigator !== "undefined" &&
   /iPad|iPhone|iPod/.test(navigator.userAgent) &&
   !(window as unknown as { MSStream?: unknown }).MSStream;
 
 /**
- * Viewport config for whileInView animations.
- * On iOS, use a large margin so elements trigger animation well before
- * they're fully in the viewport, and set amount to 0 (any pixel visible).
+ * For scroll-triggered animations (whileInView): on iOS, returns `false`
+ * which tells Framer Motion "don't apply any initial hidden state" so the
+ * element renders visible immediately. On other browsers, returns the
+ * normal hidden initial state for the scroll-reveal animation.
  */
+function scrollInit(props: Record<string, unknown>): Record<string, unknown> | false {
+  return isIOS ? false : props;
+}
+
+/** Viewport config — generous margin on iOS as extra safety */
 const safeViewport = {
   once: true,
   ...(isIOS ? { margin: "200px 0px 200px 0px", amount: 0 as const } : {}),
@@ -37,11 +43,34 @@ type InviteImageProps = React.ComponentProps<"img"> & {
   eager?: boolean;
 };
 
-function InviteImage({ eager = false, loading, decoding, ...props }: InviteImageProps) {
+function InviteImage({
+  eager = false,
+  loading,
+  decoding,
+  className = "",
+  onLoad,
+  ...props
+}: InviteImageProps) {
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img?.complete && img.naturalWidth > 0) {
+      setLoaded(true);
+    }
+  }, [props.src]);
+
   return (
     <img
+      ref={imgRef}
       loading={loading ?? (eager ? "eager" : "lazy")}
       decoding={decoding ?? "async"}
+      className={`invite-image-fade ${loaded ? "is-visible" : ""} ${className}`.trim()}
+      onLoad={(event) => {
+        setLoaded(true);
+        onLoad?.(event);
+      }}
       {...props}
     />
   );
@@ -187,7 +216,7 @@ function CountdownTimer() {
       {stats.map((stat, i) => (
         <motion.div
           key={stat.label}
-          initial={{ opacity: 0, y: 30 }}
+          initial={scrollInit({ opacity: 0, y: 30 })}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={safeViewport}
           transition={{ delay: i * 0.15, type: "spring", stiffness: 80 }}
@@ -255,7 +284,7 @@ export default function WeddingInvitation() {
 
   return (
     <main
-      className={`h-[100dvh] w-full bg-[#ffffff] overflow-y-auto overflow-x-hidden relative font-montserrat scroll-smooth smooth-mobile-scroll ${isIOS ? "ios-scroll-stable" : ""}`}
+      className={`h-[100dvh] w-full bg-[#ffffff] overflow-y-auto overflow-x-hidden relative font-montserrat smooth-mobile-scroll ${isIOS ? "ios-scroll-stable" : "scroll-smooth"}`}
     >
       <MandalaFrame minimal={isLowPerformanceMode} />
       <FloatingPetals disabled={isLowPerformanceMode} />
@@ -380,7 +409,7 @@ export default function WeddingInvitation() {
 
               <div className="max-w-[1000px] w-full flex flex-col items-center text-center relative z-10">
                 <motion.div
-                  initial={{ opacity: 0, y: -20 }}
+                  initial={scrollInit({ opacity: 0, y: -20 })}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={safeViewport}
                   className="flex flex-col items-center mb-8 md:mb-16"
@@ -394,7 +423,7 @@ export default function WeddingInvitation() {
                 </motion.div>
 
                 <motion.div
-                  initial={{ opacity: 0, y: 24, scale: 0.96 }}
+                  initial={scrollInit({ opacity: 0, y: 24, scale: 0.96 })}
                   whileInView={{ opacity: 1, y: 0, scale: 1 }}
                   viewport={safeViewport}
                   transition={{ duration: 0.8, ease: "easeOut" }}
@@ -415,7 +444,7 @@ export default function WeddingInvitation() {
 
                   {/* Nimmi's Card */}
                   <motion.div
-                    initial={{ opacity: 0, x: -30, y: 20 }}
+                    initial={scrollInit({ opacity: 0, x: -30, y: 20 })}
                     whileInView={{ opacity: 1, x: 0, y: 0 }}
                     viewport={safeViewport}
                     className="relative bg-white w-full max-w-[320px] p-6 md:p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-theme-100/50 rounded-tl-[100px] rounded-br-[100px] md:rounded-tl-[130px] md:rounded-br-[130px] overflow-hidden group flex flex-col justify-center text-center items-center"
@@ -435,7 +464,7 @@ export default function WeddingInvitation() {
                   <div className="flex flex-row md:flex-col items-center justify-center gap-4 py-4 md:py-0 relative z-20">
                     <div className="hidden md:block w-px h-32 bg-gradient-to-t from-theme-300 to-transparent" />
                     <motion.div
-                      initial={{ scale: 0, rotate: -45 }}
+                      initial={scrollInit({ scale: 0, rotate: -45 })}
                       whileInView={{ scale: 1, rotate: 0 }}
                       viewport={safeViewport}
                       transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
@@ -448,7 +477,7 @@ export default function WeddingInvitation() {
 
                   {/* Rishan's Card - Offset structurally on desktop */}
                   <motion.div
-                    initial={{ opacity: 0, x: 30, y: 20 }}
+                    initial={scrollInit({ opacity: 0, x: 30, y: 20 })}
                     whileInView={{ opacity: 1, x: 0, y: 0 }}
                     viewport={safeViewport}
                     transition={{ delay: 0.1 }}
@@ -468,7 +497,7 @@ export default function WeddingInvitation() {
 
                 {/* Date & Time Luxury Layout */}
                 <motion.div
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={scrollInit({ opacity: 0, y: 30 })}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={safeViewport}
                   className="flex flex-col items-center space-y-10 mt-4 md:mt-16 w-full"
@@ -525,7 +554,7 @@ export default function WeddingInvitation() {
 
               <div className="w-full max-w-[1000px] px-4 flex flex-col items-center text-center relative z-10">
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={scrollInit({ opacity: 0, y: 20 })}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={safeViewport}
                   className="relative w-full flex flex-col items-center"
@@ -565,7 +594,7 @@ export default function WeddingInvitation() {
               <div className="container mx-auto px-6 max-w-6xl relative z-10">
                 <div className="grid md:grid-cols-2 gap-16 md:gap-24 items-center">
                   <motion.div
-                    initial={{ opacity: 0, x: -30 }}
+                    initial={scrollInit({ opacity: 0, x: -30 })}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={safeViewport}
                     className="space-y-8 flex flex-col items-start"
@@ -610,7 +639,7 @@ export default function WeddingInvitation() {
 
                   {/* Arched Map Container */}
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
+                    initial={scrollInit({ opacity: 0, scale: 0.95 })}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={safeViewport}
                     className="relative w-full max-w-[450px] mx-auto aspect-[4/5] md:aspect-[3/4] rounded-t-full rounded-b-[2rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] border-[12px] border-white bg-theme-100 overflow-hidden group"
@@ -648,7 +677,7 @@ export default function WeddingInvitation() {
               <div className="absolute inset-0 opacity-[0.03] paper-grain pointer-events-none" />
               
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={scrollInit({ opacity: 0, y: 20 })}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={safeViewport}
                 className="flex flex-col items-center text-center mb-16 md:mb-24 z-10 px-4"
@@ -669,7 +698,7 @@ export default function WeddingInvitation() {
                   {['KNP02023 copy.jpg', 'KNP02116.jpg', 'KNP02149.jpg', 'KNP02428.jpg', 'KNP02501 copy.jpg', 'KNP02092.jpg'].map((img, i) => (
                     <motion.div
                       key={img}
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={scrollInit({ opacity: 0, y: 20 })}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={safeViewport}
                       className="rounded-[1.2rem] overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.1)] border-[4px] border-white break-inside-avoid mb-3 sm:mb-4 bg-white"
@@ -683,30 +712,30 @@ export default function WeddingInvitation() {
                 <div className="hidden md:grid grid-cols-3 gap-6 lg:gap-8">
                   {/* Column 1 */}
                   <div className="flex flex-col gap-6 lg:gap-8 pt-12">
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
+                    <motion.div initial={scrollInit({ opacity: 0, y: 30 })} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
                       <InviteImage src="/pre/KNP02023 copy.jpg" className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" alt="" />
                     </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
+                    <motion.div initial={scrollInit({ opacity: 0, y: 30 })} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
                       <InviteImage src="/pre/KNP02116.jpg" className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" alt="" />
                     </motion.div>
                   </div>
                   
                   {/* Column 2 */}
                   <div className="flex flex-col gap-6 lg:gap-8">
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
+                    <motion.div initial={scrollInit({ opacity: 0, y: 30 })} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
                       <InviteImage src="/pre/KNP02149.jpg" className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" alt="" />
                     </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
+                    <motion.div initial={scrollInit({ opacity: 0, y: 30 })} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
                       <InviteImage src="/pre/KNP02428.jpg" className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" alt="" />
                     </motion.div>
                   </div>
 
                   {/* Column 3 */}
                   <div className="flex flex-col gap-6 lg:gap-8 pt-24">
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
+                    <motion.div initial={scrollInit({ opacity: 0, y: 30 })} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
                       <InviteImage src="/pre/KNP02501 copy.jpg" className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" alt="" />
                     </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
+                    <motion.div initial={scrollInit({ opacity: 0, y: 30 })} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
                       <InviteImage src="/pre/KNP02092.jpg" className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" alt="" />
                     </motion.div>
                   </div>
@@ -723,7 +752,7 @@ export default function WeddingInvitation() {
 
               <div className="container mx-auto px-4 max-w-2xl text-center relative z-10 w-full">
                 <motion.div
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={scrollInit({ opacity: 0, y: 30 })}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={safeViewport}
                   className="flex flex-col items-center"
@@ -804,7 +833,7 @@ export default function WeddingInvitation() {
 
                 <div className="container mx-auto px-4 max-w-4xl text-center relative z-10 w-full">
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
+                    initial={scrollInit({ opacity: 0, scale: 0.95 })}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={safeViewport}
                     className="flex flex-col items-center"
@@ -860,7 +889,7 @@ export default function WeddingInvitation() {
                       <h3 className="font-playball text-[3.2rem] sm:text-6xl md:text-8xl text-theme-900 relative z-10 drop-shadow-sm px-4 pt-4 leading-none">Sandewni & Nisitha</h3>
 
                       <motion.img
-                        initial={{ opacity: 0, y: 24, scale: 0.95 }}
+                        initial={scrollInit({ opacity: 0, y: 24, scale: 0.95 })}
                         whileInView={{ opacity: 0.9, y: 0, scale: 1 }}
                         viewport={safeViewport}
                         transition={{ duration: 0.9, ease: "easeOut" }}
