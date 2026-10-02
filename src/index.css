@@ -156,9 +156,10 @@ img[src*="right.png"] {
   background-size: 8px 8px, 14px 14px, 100% 100%;
 }
 
+/* Disable content-visibility entirely — it causes disappearing sections on iOS */
 .cv-auto {
-  content-visibility: auto;
-  contain-intrinsic-size: 900px;
+  content-visibility: visible;
+  contain-intrinsic-size: auto;
 }
 
 .smooth-mobile-scroll {
@@ -167,18 +168,37 @@ img[src*="right.png"] {
   touch-action: pan-y;
 }
 
-@supports not (content-visibility: auto) {
-  .cv-auto {
-    content-visibility: visible;
-    contain-intrinsic-size: auto;
+/* ——— iOS-safe scroll-triggered fade-in fallback ——— */
+/* Elements start hidden and animate in when they get the .is-visible class
+   from JS IntersectionObserver OR after a generous CSS delay as an ultimate
+   fallback so nothing ever stays permanently invisible. */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* iOS Safari can skip painting below-fold blocks with content-visibility. */
+/* Safety net: on iOS, if JS observer doesn't fire, force elements visible
+   after a short delay so content never disappears */
 @supports (-webkit-touch-callout: none) {
-  .cv-auto {
-    content-visibility: visible;
-    contain-intrinsic-size: auto;
+  /* Make all motion.div elements visible by default on iOS,
+     preventing them from being stuck at opacity:0 */
+  [style*="opacity: 0"],
+  [style*="opacity:0"] {
+    animation: fadeInUp 0.8s ease-out forwards;
+    animation-delay: 0.3s;
+  }
+
+  /* Ensure smooth momentum scrolling */
+  .smooth-mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    scroll-behavior: auto; /* iOS handles its own smooth scroll */
   }
 }
 
@@ -218,11 +238,6 @@ img[src*="right.png"] {
 
   .section-floral-overlay {
     opacity: 0.6;
-  }
-
-  .cv-auto {
-    content-visibility: visible;
-    contain-intrinsic-size: auto;
   }
 }
 

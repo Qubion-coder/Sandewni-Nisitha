@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 import { Sparkles, MapPin, Calendar, Clock } from "lucide-react";
 
 /**
@@ -8,6 +8,27 @@ import { Sparkles, MapPin, Calendar, Clock } from "lucide-react";
  * Background: Cream/Sand
  * Accents: Green/Brown
  */
+
+/**
+ * iOS Safari often throttles or skips IntersectionObserver callbacks
+ * during fast momentum scrolling, causing whileInView elements to
+ * stay at their initial (hidden) state. We detect iOS and use a
+ * generous viewport margin + an automatic fallback timer.
+ */
+const isIOS = typeof navigator !== "undefined" &&
+  /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+  !(window as unknown as { MSStream?: unknown }).MSStream;
+
+/**
+ * Viewport config for whileInView animations.
+ * On iOS, use a large margin so elements trigger animation well before
+ * they're fully in the viewport, and set amount to 0 (any pixel visible).
+ */
+const safeViewport = {
+  once: true,
+  ...(isIOS ? { margin: "200px 0px 200px 0px", amount: 0 as const } : {}),
+};
+
 
 const mandalaImage = "/images/mandala_gold.png";
 const brideGroomImage = "/images/10.png";
@@ -168,7 +189,7 @@ function CountdownTimer() {
           key={stat.label}
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={safeViewport}
           transition={{ delay: i * 0.15, type: "spring", stiffness: 80 }}
           className="relative group"
         >
@@ -229,6 +250,54 @@ export default function WeddingInvitation() {
       motionMedia.removeEventListener("change", updatePerformanceMode);
       window.removeEventListener("resize", updatePerformanceMode);
       connection?.removeEventListener?.("change", updatePerformanceMode);
+    };
+  }, []);
+
+  /**
+   * iOS Safari fallback: force-reveal elements that are stuck at opacity:0
+   * due to IntersectionObserver not firing during momentum scroll.
+   * Uses both a timer and a scroll listener as safety nets.
+   */
+  useEffect(() => {
+    if (!isIOS) return;
+
+    const revealHiddenElements = () => {
+      const hiddenEls = document.querySelectorAll<HTMLElement>(
+        '[style*="opacity: 0"], [style*="opacity:0"]'
+      );
+      hiddenEls.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        // Reveal if the element is within or above the viewport
+        // (generous 200px buffer below viewport too)
+        if (rect.top < windowHeight + 200) {
+          el.style.transition = "opacity 0.6s ease-out, transform 0.6s ease-out";
+          el.style.opacity = "1";
+          el.style.transform = "translateY(0) translateX(0) scale(1)";
+        }
+      });
+    };
+
+    // Initial fallback after 3 seconds
+    const timer = setTimeout(revealHiddenElements, 3000);
+
+    // Also check on scroll (throttled)
+    const scrollContainer = document.querySelector('.smooth-mobile-scroll');
+    let scrollTimer: ReturnType<typeof setTimeout> | null = null;
+    const onScroll = () => {
+      if (scrollTimer) return;
+      scrollTimer = setTimeout(() => {
+        revealHiddenElements();
+        scrollTimer = null;
+      }, 150);
+    };
+
+    scrollContainer?.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      clearTimeout(timer);
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollContainer?.removeEventListener("scroll", onScroll);
     };
   }, []);
 
@@ -361,7 +430,7 @@ export default function WeddingInvitation() {
                 <motion.div
                   initial={{ opacity: 0, y: -20 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
+                  viewport={safeViewport}
                   className="flex flex-col items-center mb-8 md:mb-16"
                 >
                   <div className="w-px h-16 md:h-24 bg-gradient-to-b from-transparent to-theme-400 mb-6 md:mb-10" />
@@ -375,7 +444,7 @@ export default function WeddingInvitation() {
                 <motion.div
                   initial={{ opacity: 0, y: 24, scale: 0.96 }}
                   whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                  viewport={{ once: true }}
+                  viewport={safeViewport}
                   transition={{ duration: 0.8, ease: "easeOut" }}
                   className="relative mb-10 md:mb-14"
                 >
@@ -396,7 +465,7 @@ export default function WeddingInvitation() {
                   <motion.div
                     initial={{ opacity: 0, x: -30, y: 20 }}
                     whileInView={{ opacity: 1, x: 0, y: 0 }}
-                    viewport={{ once: true }}
+                    viewport={safeViewport}
                     className="relative bg-white w-full max-w-[320px] p-6 md:p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-theme-100/50 rounded-tl-[100px] rounded-br-[100px] md:rounded-tl-[130px] md:rounded-br-[130px] overflow-hidden group flex flex-col justify-center text-center items-center"
                   >
                     <div className="absolute inset-2 border border-theme-200/50 rounded-tl-[90px] rounded-br-[90px] md:rounded-tl-[120px] md:rounded-br-[120px] pointer-events-none" />
@@ -416,7 +485,7 @@ export default function WeddingInvitation() {
                     <motion.div
                       initial={{ scale: 0, rotate: -45 }}
                       whileInView={{ scale: 1, rotate: 0 }}
-                      viewport={{ once: true }}
+                      viewport={safeViewport}
                       transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
                       className="w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-theme-500 to-theme-700 rounded-full flex items-center justify-center shadow-xl shadow-theme-900/20 border-4 border-[#ffffff]"
                     >
@@ -429,7 +498,7 @@ export default function WeddingInvitation() {
                   <motion.div
                     initial={{ opacity: 0, x: 30, y: 20 }}
                     whileInView={{ opacity: 1, x: 0, y: 0 }}
-                    viewport={{ once: true }}
+                    viewport={safeViewport}
                     transition={{ delay: 0.1 }}
                     className="relative bg-white w-full max-w-[320px] p-6 md:p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-theme-100/50 rounded-tr-[100px] rounded-bl-[100px] md:rounded-tr-[130px] md:rounded-bl-[130px] overflow-hidden group flex flex-col justify-center text-center items-center md:mt-24"
                   >
@@ -449,7 +518,7 @@ export default function WeddingInvitation() {
                 <motion.div
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
+                  viewport={safeViewport}
                   className="flex flex-col items-center space-y-10 mt-4 md:mt-16 w-full"
                 >
                   <div className="w-1.5 h-1.5 rotate-45 bg-theme-300" />
@@ -506,7 +575,7 @@ export default function WeddingInvitation() {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
+                  viewport={safeViewport}
                   className="relative w-full flex flex-col items-center"
                 >
                   {/* Watermark text */}
@@ -546,7 +615,7 @@ export default function WeddingInvitation() {
                   <motion.div
                     initial={{ opacity: 0, x: -30 }}
                     whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
+                    viewport={safeViewport}
                     className="space-y-8 flex flex-col items-start"
                   >
                     <div className="flex flex-col items-start gap-4">
@@ -591,7 +660,7 @@ export default function WeddingInvitation() {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
+                    viewport={safeViewport}
                     className="relative w-full max-w-[450px] mx-auto aspect-[4/5] md:aspect-[3/4] rounded-t-full rounded-b-[2rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] border-[12px] border-white bg-theme-100 overflow-hidden group"
                   >
                     <div className="absolute inset-0 border border-theme-200 rounded-t-full rounded-b-[1.5rem] pointer-events-none z-10" />
@@ -629,7 +698,7 @@ export default function WeddingInvitation() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                viewport={safeViewport}
                 className="flex flex-col items-center text-center mb-16 md:mb-24 z-10 px-4"
               >
                 <div className="flex items-center gap-4 mb-4">
@@ -650,7 +719,7 @@ export default function WeddingInvitation() {
                       key={img}
                       initial={{ opacity: 0, y: 20 }}
                       whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
+                      viewport={safeViewport}
                       className="rounded-[1.2rem] overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.1)] border-[4px] border-white break-inside-avoid mb-3 sm:mb-4 bg-white"
                     >
                       <InviteImage src={`/pre/${img}`} className="w-full h-auto block" alt="Pre-wedding" />
@@ -662,30 +731,30 @@ export default function WeddingInvitation() {
                 <div className="hidden md:grid grid-cols-3 gap-6 lg:gap-8">
                   {/* Column 1 */}
                   <div className="flex flex-col gap-6 lg:gap-8 pt-12">
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
+                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
                       <InviteImage src="/pre/KNP02023 copy.jpg" className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" alt="" />
                     </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
+                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
                       <InviteImage src="/pre/KNP02116.jpg" className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" alt="" />
                     </motion.div>
                   </div>
                   
                   {/* Column 2 */}
                   <div className="flex flex-col gap-6 lg:gap-8">
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
+                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
                       <InviteImage src="/pre/KNP02149.jpg" className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" alt="" />
                     </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
+                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
                       <InviteImage src="/pre/KNP02428.jpg" className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" alt="" />
                     </motion.div>
                   </div>
 
                   {/* Column 3 */}
                   <div className="flex flex-col gap-6 lg:gap-8 pt-24">
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
+                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
                       <InviteImage src="/pre/KNP02501 copy.jpg" className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" alt="" />
                     </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
+                    <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={safeViewport} className="rounded-[2rem] overflow-hidden shadow-xl border-4 border-white group">
                       <InviteImage src="/pre/KNP02092.jpg" className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700" alt="" />
                     </motion.div>
                   </div>
@@ -704,7 +773,7 @@ export default function WeddingInvitation() {
                 <motion.div
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
+                  viewport={safeViewport}
                   className="flex flex-col items-center"
                 >
                   <p className="text-[10px] md:text-[12px] uppercase tracking-[0.5em] md:tracking-[0.8em] text-theme-300 font-bold mb-6">Will You Join Us?</p>
@@ -785,7 +854,7 @@ export default function WeddingInvitation() {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
+                    viewport={safeViewport}
                     className="flex flex-col items-center"
                   >
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-theme-100/50 mb-8 mt-4 shadow-sm border border-theme-200/50">
@@ -841,7 +910,7 @@ export default function WeddingInvitation() {
                       <motion.img
                         initial={{ opacity: 0, y: 24, scale: 0.95 }}
                         whileInView={{ opacity: 0.9, y: 0, scale: 1 }}
-                        viewport={{ once: true }}
+                        viewport={safeViewport}
                         transition={{ duration: 0.9, ease: "easeOut" }}
                         src={mandalaImage}
                         alt=""
