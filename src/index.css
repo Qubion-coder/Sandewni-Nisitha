@@ -32,9 +32,11 @@
 html, body {
   margin: 0;
   padding: 0;
-  overflow: hidden;
-  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto !important;
+  height: auto !important;
   width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .serif {
@@ -165,7 +167,6 @@ img[src*="right.png"] {
 .smooth-mobile-scroll {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
-  touch-action: pan-y;
 }
 
 @supports (-webkit-touch-callout: none) {
@@ -180,12 +181,17 @@ img[src*="right.png"] {
 
 .invite-image-fade {
   opacity: 0;
-  transition: opacity 0.55s ease-out;
-  will-change: opacity;
+  transition: opacity 0.35s ease-out;
 }
 
 .invite-image-fade.is-visible {
   opacity: 1;
+}
+
+/* Mobile / iOS: show images immediately — no hidden-then-fade flash while scrolling */
+html.fast-load-site .invite-image-fade {
+  opacity: 1;
+  transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
