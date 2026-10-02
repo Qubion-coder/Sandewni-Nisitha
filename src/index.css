@@ -168,37 +168,18 @@ img[src*="right.png"] {
   touch-action: pan-y;
 }
 
-/* ——— iOS-safe scroll-triggered fade-in fallback ——— */
-/* Elements start hidden and animate in when they get the .is-visible class
-   from JS IntersectionObserver OR after a generous CSS delay as an ultimate
-   fallback so nothing ever stays permanently invisible. */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Safety net: on iOS, if JS observer doesn't fire, force elements visible
-   after a short delay so content never disappears */
 @supports (-webkit-touch-callout: none) {
-  /* Make all motion.div elements visible by default on iOS,
-     preventing them from being stuck at opacity:0 */
-  [style*="opacity: 0"],
-  [style*="opacity:0"] {
-    animation: fadeInUp 0.8s ease-out forwards;
-    animation-delay: 0.3s;
-  }
-
   /* Ensure smooth momentum scrolling */
   .smooth-mobile-scroll {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
     scroll-behavior: auto; /* iOS handles its own smooth scroll */
+  }
+
+  /* Keep below-hero content present while iOS momentum scrolling settles. */
+  .ios-scroll-stable .cv-auto [style*="opacity"] {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 

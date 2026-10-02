@@ -253,57 +253,9 @@ export default function WeddingInvitation() {
     };
   }, []);
 
-  /**
-   * iOS Safari fallback: force-reveal elements that are stuck at opacity:0
-   * due to IntersectionObserver not firing during momentum scroll.
-   * Uses both a timer and a scroll listener as safety nets.
-   */
-  useEffect(() => {
-    if (!isIOS) return;
-
-    const revealHiddenElements = () => {
-      const hiddenEls = document.querySelectorAll<HTMLElement>(
-        '[style*="opacity: 0"], [style*="opacity:0"]'
-      );
-      hiddenEls.forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        const windowHeight = window.innerHeight;
-        // Reveal if the element is within or above the viewport
-        // (generous 200px buffer below viewport too)
-        if (rect.top < windowHeight + 200) {
-          el.style.transition = "opacity 0.6s ease-out, transform 0.6s ease-out";
-          el.style.opacity = "1";
-          el.style.transform = "translateY(0) translateX(0) scale(1)";
-        }
-      });
-    };
-
-    // Initial fallback after 3 seconds
-    const timer = setTimeout(revealHiddenElements, 3000);
-
-    // Also check on scroll (throttled)
-    const scrollContainer = document.querySelector('.smooth-mobile-scroll');
-    let scrollTimer: ReturnType<typeof setTimeout> | null = null;
-    const onScroll = () => {
-      if (scrollTimer) return;
-      scrollTimer = setTimeout(() => {
-        revealHiddenElements();
-        scrollTimer = null;
-      }, 150);
-    };
-
-    scrollContainer?.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => {
-      clearTimeout(timer);
-      if (scrollTimer) clearTimeout(scrollTimer);
-      scrollContainer?.removeEventListener("scroll", onScroll);
-    };
-  }, []);
-
   return (
     <main
-      className="h-[100dvh] w-full bg-[#ffffff] overflow-y-auto overflow-x-hidden relative font-montserrat scroll-smooth smooth-mobile-scroll"
+      className={`h-[100dvh] w-full bg-[#ffffff] overflow-y-auto overflow-x-hidden relative font-montserrat scroll-smooth smooth-mobile-scroll ${isIOS ? "ios-scroll-stable" : ""}`}
     >
       <MandalaFrame minimal={isLowPerformanceMode} />
       <FloatingPetals disabled={isLowPerformanceMode} />
