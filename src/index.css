@@ -32,11 +32,9 @@
 html, body {
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
-  overflow-y: auto !important;
-  height: auto !important;
+  overflow: hidden;
+  height: 100%;
   width: 100%;
-  -webkit-overflow-scrolling: touch;
 }
 
 .serif {
@@ -167,31 +165,57 @@ img[src*="right.png"] {
 .smooth-mobile-scroll {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
+  touch-action: pan-y;
 }
 
 @supports (-webkit-touch-callout: none) {
-  /* Ensure smooth momentum scrolling */
   .smooth-mobile-scroll {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
-    scroll-behavior: auto; /* iOS handles its own smooth scroll */
+    scroll-behavior: auto;
+  }
+}
+
+.ios-scroll-stable {
+  scroll-behavior: auto;
+}
+
+/* Lighter path for phones: no stuck blur, no invisible images */
+.mobile-lite .invite-image-fade {
+  opacity: 1;
+  transition: none;
+  will-change: auto;
+}
+
+.mobile-lite .decorative-blur {
+  display: none !important;
+}
+
+.mobile-lite .mandala-art {
+  mix-blend-mode: normal;
+}
+
+@media (max-width: 768px) {
+  img[src*="mandala_gold.png"],
+  img[src*="left.png"],
+  img[src*="right.png"] {
+    filter: sepia(0.35) saturate(1.4) hue-rotate(180deg) brightness(0.75);
   }
 
+  .mobile-lite [class*="backdrop-blur"] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
 }
 
 .invite-image-fade {
   opacity: 0;
-  transition: opacity 0.35s ease-out;
+  transition: opacity 0.55s ease-out;
+  will-change: opacity;
 }
 
 .invite-image-fade.is-visible {
   opacity: 1;
-}
-
-/* Mobile / iOS: show images immediately — no hidden-then-fade flash while scrolling */
-html.fast-load-site .invite-image-fade {
-  opacity: 1;
-  transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
