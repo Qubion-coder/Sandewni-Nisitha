@@ -7,7 +7,9 @@ const PREFIXES = [
   'Miss',
   'Mr. & Mrs.',
   'Family',
-  'Dear'
+  'Dear',
+  'Paster',
+  'Fr.'
 ];
 
 export default function Admin() {
