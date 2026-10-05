@@ -8,7 +8,7 @@ const PREFIXES = [
   'Mr. & Mrs.',
   'Family',
   'Dear',
-  'Paster',
+  'Pastor',
   'Fr.'
 ];
 
